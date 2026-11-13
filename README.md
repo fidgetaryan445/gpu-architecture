@@ -37,6 +37,6 @@ Everything is reproducible from `HOW_TO_RUN.md`.
 
 ## Notes
 - Needs an NVIDIA GPU and CUDA for assignments 1 and 2.
-- Test environment: assignments 1 and 2 were built and run on IITK department GPU servers (`gpu0`: CUDA 11.3; `gpu3`: A40, CUDA 12.6), which aren't publicly accessible. Assignment 3 was only compile-checked (Linux 5.15). Each folder README has the details.
+- Test environment: assignments 1 and 2 were built and run on IITK department GPU servers (`gpu0`: Pascal GPU, CUDA 11.3; `gpu3`: Ampere A40, CUDA 12.6), which aren't publicly accessible. Assignment 3 was only compile-checked (Linux 5.15). Each folder README has the details.
 - Generated data (traces, tarballs, binaries, `.o`/`.a`) is excluded by `.gitignore`.
 - Each assignment folder has its own README with the problem statement, approach and run instructions.
