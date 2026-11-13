@@ -56,5 +56,4 @@ gcc -O2 -o p3b p3b.c && ./p3b /tmp/mem_1.bin /tmp/mem_2.bin /tmp/mem_3.bin
   (download the NVBit 1.7 release and copy it into `nvbit_release/core/`).
 
 ## Status
-The tools were written without GPU access and the guide notes they were not run end to end
-from this repo. Build and check them on a GPU machine before relying on the numbers.
+The tools were built and run on the IITK GPU server. `REMOTE_GPU_GUIDE.md` was written before that first run and still says they were untested; trust this README over it.

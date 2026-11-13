@@ -33,9 +33,9 @@ Everything is reproducible from `HOW_TO_RUN.md`. This is the most finished part 
 ### Assignment 3: Drivers (`assignment-3/`)
 - `chdev/`, `pio/`, `mmio/`: working course example modules (character device, port I/O to the serial port, MMIO to the local APIC with sysfs).
 - `accel_release/`: PCI driver for a `cs623accel` accelerator device (allocation, DMA copies, vector add/mul/xor).
-  **Incomplete:** the allocation and DMA-copy paths are written, but `do_free`, `do_reset` and
-  `do_compute` are unfinished drafts that don't compile, so the module doesn't build yet.
-  Details in `assignment-3/README.md`.
+  Implements best-fit alloc, free, DMA copy, vector compute and reset. It compiles cleanly
+  against Linux 5.15 but hasn't been run against the emulated device; the MMIO copy path is not
+  implemented. Details in `assignment-3/README.md`.
 
 ## Notes
 - Needs CUDA 12.x and an NVIDIA GPU (developed for an A40, `sm_86`) for assignments 1 and 2.

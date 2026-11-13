@@ -108,8 +108,11 @@ static ssize_t accel_read(struct file *filp, char *buff, size_t len, loff_t * of
 			      break;
 
 	       case OP_RESET:
-		              if(cif->devops->accel_reset)
+		              if(cif->devops->accel_reset){
+				      spin_lock(&cif->lock);
 				      err = cif->devops->accel_reset(cif, &msg);
+				      spin_unlock(&cif->lock);
+			      }
 			      else
 				      err = -EINVAL;
 			      break;

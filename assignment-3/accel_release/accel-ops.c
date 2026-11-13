@@ -76,68 +76,85 @@ unlock_ret:
    return retval;
 }
 
-static int free_range(struct compute_context *cc){
-  struct mem_range *node , *tmp ;
-  list_for_each_entry_safe(node,tmp,&cc->mem_range_list ,list){
+static void free_range(struct compute_context *cc)
+{
+  struct mem_range *node, *tmp;
+  list_for_each_entry_safe(node, tmp, &cc->mem_range_list, list){
     list_del(&node->list);
     kfree(node);
   }
-  cc->used = 0 ;
+  cc->used = 0;
 }
 
-//Should be called by holding aif->lock
+//Should be called by holding aif->lock (also called from accel_release() with the lock held)
+//m may be NULL
 static int do_reset(struct accel_interface *aif, struct msg *m)
 {
+  struct acceldev *adev = aif->pci_dev;
+
+  //Every allocated range of both regions goes back to the free pool
   free_range(aif->devmap);
   free_range(aif->devram);
-  aif->cur_devmem_mode = AC_MODE_DMA ;
-  if(aif->pcidev){
-      set_dev_mode(aif->pci_dev,ACCEL_MODE_DMA);
 
+  aif->cur_devmem_mode = AC_MODE_DMA;
+  if(adev){
+      set_dev_mode(adev, ACCEL_MODE_DMA);
+      _cwrite(ACCEL_SUCCESS, adev->bar0, BAR0_ERR_STATUS);
+      _cwrite(0, adev->bar1, BAR1_SRC_ONE);
+      _cwrite(0, adev->bar1, BAR1_SRC_TWO);
+      _cwrite(0, adev->bar1, BAR1_DST);
+      _cwrite(0, adev->bar1, BAR1_COUNT);
   }
-  aif->status= ACI_STATUS_READY ;
-
-   return -ENOTSUPP;   
-           
+  aif->status = ACI_STATUS_READY;
+  return 0;
 }
 
-// A simple best-fit allocation 
+// Best-fit allocation: look at every free gap (before the first range, between two
+// ranges, after the last range) and use the smallest one that is large enough.
+// The new block is carved from the end of the chosen gap next to the range that follows it,
+// or from the start of the gap after the last range.
+// Returns the start address of the block or -1.
 static long allocate_mem_range(struct compute_context *cc, long size)
 {
-  
     struct mem_range *curr = NULL, *prev = NULL, *n = NULL;
-    long = cc->start;
-    long pend = 0;
+    struct mem_range *best = NULL;   //range that follows the best gap
+    unsigned long best_gap = ~0UL;
+    unsigned long gap_start, gap;
+
+    if(size <= 0)
+        return -1;
 
     list_for_each_entry(curr, &cc->mem_range_list, list){
-       if(cstart == cc->start && curr->start - cstart >= size){  //Gap in the begining
-	       curr->start -= size;
-	       return curr->start;  
-       }
-       if(pend && curr->start - pend >= size){
-	       curr->start -= size;
-	       return curr->start;  
-       }
-       pend = curr->end;    
-       prev = curr;
+        gap_start = prev ? prev->end : cc->start;
+        gap = curr->start - gap_start;
+        if(gap >= (unsigned long)size && gap < best_gap){
+            best_gap = gap;
+            best = curr;
+        }
+        prev = curr;
     }
 
-    if(pend && pend + size <= cc->end){
-	    BUG_ON(!prev);
-            BUG_ON(pend != prev->end);
-	    prev->end += size; 
-	    return pend;
-    } 
-    if(!pend && cstart == cc->start){ //First allocation
-            n = kzalloc(sizeof(struct mem_range), GFP_ATOMIC);
-	    BUG_ON(!n);
-            n->start = cstart;
-	    n->end = cstart + size;
-            list_add_tail(&n->list, &cc->mem_range_list);
-	    return n->start;
+    if(best){                       //gap in front of "best": grow it downwards
+        best->start -= size;
+        return best->start;
+    }
+
+    //No interior gap fits: use the space after the last range (or the whole region)
+    gap_start = prev ? prev->end : cc->start;
+    if(gap_start + size <= cc->end){
+        if(prev){
+            prev->end += size;
+            return gap_start;
+        }
+        n = kzalloc(sizeof(struct mem_range), GFP_ATOMIC);
+        if(!n)
+            return -1;
+        n->start = gap_start;
+        n->end = gap_start + size;
+        list_add_tail(&n->list, &cc->mem_range_list);
+        return n->start;
     }
     return -1;
-
 }
 
 //Returns encapsulating range or NULL
@@ -154,47 +171,61 @@ static struct mem_range* find_range(struct compute_context *cc, long start, long
 
 static int do_free(struct accel_interface *aif, struct msg *m)
 {
-   int start = m->d_addr ;
-   int end = start + m->size ;
-   u8 mode = m->flags & 0xFF ; 
-   int retval = 0 ;
-   acceldev adev = aif->device ;
-   strcut mem_range *node, *new ; 
+   unsigned long start = m->d_handle;
+   unsigned long end = start + m->size;
+   u8 mode = m->flags & 0xFF;
+   struct compute_context *cc;
+   struct mem_range *node, *new;
+   int retval = 0;
 
-   if(mode > ACCEL_MODE_MMIO){
-     return -EINT ;
+   if(mode > AC_MODE_MMIO || m->size <= 0){
+       sprintf(m->status, "Acceldev: Invalid free request");
+       return -EINVAL;
    }
-   struct compute_context cc ;
-   cc = (mode==0)?AC_MODE_DMA : AC_MODE_MMIO ;
-   
-   spin_lock(&aif->lock) ;
-   if(aif->status!=ACI_STATUS_READY){
-     return -EBUSY  ;
-   }
-   node = find_range(cc, start, end );
-   if(node.start > start || node.end < end){
-     return -ENOMEM;
+   cc = (mode == AC_MODE_DMA) ? aif->devram : aif->devmap;
+
+   //Allocate before taking the lock: a split needs one extra node
+   new = kzalloc(sizeof(struct mem_range), GFP_KERNEL);
+   if(!new){
+       sprintf(m->status, "Acceldev: Out of kernel memory");
+       return -ENOMEM;
    }
 
-   if(node.start ==start && node.end == end){
-     list_del(&node);
-     kfree(node);
-   }else if(node.start > start && node.end == end){
-     node.end = start ;
-   }else if(node.start == start && node.end > end){
-     node.start  = end ;
-   }else{
-     if(!kzalloc(sizeof(mem_range)), GFP_ATOMIC);
-          return -ENOMEM ; 
-     new.start = end ; 
-     new.end = node.end ;
-     node.end = start ; 
-     list_add(&new, &node);
-
+   spin_lock(&aif->lock);
+   if(aif->status != ACI_STATUS_READY){
+       retval = -EBUSY;
+       sprintf(m->status, "Acceldev: Device unavailable or busy");
+       goto unlock_ret;
    }
-    spin_unlock(&aif->lock) ;
 
-   return -ENOTSUPP;   
+   //The freed block has to lie completely inside one allocated range
+   node = find_range(cc, start, end);
+   if(!node){
+       retval = -EINVAL;
+       sprintf(m->status, "Acceldev: Invalid device address to free");
+       goto unlock_ret;
+   }
+
+   if(node->start == start && node->end == end){          //whole range
+       list_del(&node->list);
+       kfree(node);
+   }else if(node->start < start && node->end == end){    //tail of the range
+       node->end = start;
+   }else if(node->start == start && node->end > end){    //head of the range
+       node->start = end;
+   }else{                                                 //hole in the middle: split
+       new->start = end;
+       new->end = node->end;
+       node->end = start;
+       list_add(&new->list, &node->list);                 //keeps the list sorted
+       new = NULL;
+   }
+   cc->used -= m->size;
+
+unlock_ret:
+   spin_unlock(&aif->lock);
+   kfree(new);                 //NULL (or unused) after a split
+   return retval;
 }
 
 static int do_alloc(struct accel_interface *aif, struct msg *m)
@@ -304,11 +335,12 @@ static int do_copy(struct accel_interface *aif, struct msg *m)
 	 sprintf(m->status, "Acceldev: Invalid mode for memory copy");
 	 return -EINVAL;
    }
+   spin_lock(&aif->lock);
    if(aif->status != ACI_STATUS_READY){
+	spin_unlock(&aif->lock);
 	sprintf(m->status, "Acceldev: Device unavailable or busy");
        	return -EBUSY;
-   }	   
-   spin_lock(&aif->lock);
+   }
 
    if(mode == AC_MODE_DMA){
 	  cc = aif->devram;
@@ -321,11 +353,13 @@ static int do_copy(struct accel_interface *aif, struct msg *m)
    spin_unlock(&aif->lock);
    if(!mr){
 	 sprintf(m->status, "Acceldev: Invalid device address");
-	 return -EINVAL;
+	 retval = -EINVAL;
+	 goto ret;
    }
    //Now it is a valid range
    if(mode == AC_MODE_MMIO){ //mmio map
-          return -ENOTSUPP;   
+          retval = -ENOTSUPP;
+          goto ret;
    }else{
 	   long opsize = m->size;
 	   long daddr = m->d_handle;
@@ -366,35 +400,68 @@ ret:
 static int do_compute(struct accel_interface *aif, struct msg *m)
 {
    struct acceldev *adev = aif->pci_dev;
-   struct compute_context *cc ;
-  u8 mode = m->flag & 0xFF ;
-  if(m->count<0 || mode >ACCEL_MODE_MMIO){
-    return -EINVAL;
-  }
-  u32 devcmd ; 
-  int err ; 
-  unsigned long long len ;
-  len = sizeof(int)*count ;
-  int retval = 0 ;
-  cc = (mode==ACCEL_MODE_MMIO)?aif->devmap: aif->devram ;
-  spin_lock(&aif->lock)
-   if(aif->status!=ACI_STATUS_READY){
-     spin_unlock(&aif->lock);
-     return -EBUSY;
+   struct compute_context *cc;
+   u8 mode = m->flags & 0xFF;
+   u32 devcmd;
+   unsigned long len;
+   int err;
+   int retval = 0;
+
+   switch(m->cmd){
+       case OP_VADD: devcmd = ACCEL_CMD_VADD; break;
+       case OP_VMUL: devcmd = ACCEL_CMD_VMUL; break;
+       case OP_VXOR: devcmd = ACCEL_CMD_VXOR; break;
+       default:
+           sprintf(m->status, "Acceldev: Invalid compute command");
+           return -EINVAL;
    }
-  if(!find_range(cc,m->s1_addr,m->s1_addr+len)||!find_range(cc,m->s2_addr,m->s2_addr+len)||!find_range(cc,m->d_addr,m->d_addr+len)){
-    return -ENOMEM ;
-  }
-  _cwrite(ACCEL_SUCCESS , adev->bar0 , BAR0_ERR_STATUS);
-  reinit_completion(&adev->compute_comp);
-  _cwrite(m->s1_addr,adev->bar1,BAR1_SRC_ONE) ;
-  
 
-  wait_for_completion(&adev->compute_comp) ;
-  err  = _cread(adev->bar0 , BAR0_ERR_STATUS) ;
-  spin_unlock(&aif->lock) ;
+   if(m->count <= 0 || mode > AC_MODE_MMIO){
+       sprintf(m->status, "Acceldev: Invalid compute arguments");
+       return -EINVAL;
+   }
+   len = sizeof(int) * m->count;
+   cc = (mode == AC_MODE_MMIO) ? aif->devmap : aif->devram;
 
-  return -retval;   
+   spin_lock(&aif->lock);
+   if(aif->status != ACI_STATUS_READY){
+       spin_unlock(&aif->lock);
+       sprintf(m->status, "Acceldev: Device unavailable or busy");
+       return -EBUSY;
+   }
+   //All three vectors must be allocated device memory of the selected region
+   if(!find_range(cc, m->s1_addr, m->s1_addr + len) ||
+      !find_range(cc, m->s2_addr, m->s2_addr + len) ||
+      !find_range(cc, m->d_addr,  m->d_addr  + len)){
+       spin_unlock(&aif->lock);
+       sprintf(m->status, "Acceldev: Compute operands are not valid device memory");
+       return -EINVAL;
+   }
+   aif->status = ACI_STATUS_BUSY_COMP;
+   spin_unlock(&aif->lock);            //never sleep with the spinlock held
+
+   //Program the device and start the operation
+   set_dev_mode(adev, mode);
+   _cwrite(ACCEL_SUCCESS, adev->bar0, BAR0_ERR_STATUS);
+   reinit_completion(&adev->compute_comp);
+   _cwrite(m->s1_addr, adev->bar1, BAR1_SRC_ONE);
+   _cwrite(m->s2_addr, adev->bar1, BAR1_SRC_TWO);
+   _cwrite(m->d_addr,  adev->bar1, BAR1_DST);
+   _cwrite(m->count,   adev->bar1, BAR1_COUNT);
+   _cwrite(devcmd,     adev->bar0, BAR0_CMD);   //Trigger the computation
+
+   wait_for_completion(&adev->compute_comp);    //raised by the completion interrupt
+   err = _cread(adev->bar0, BAR0_ERR_STATUS);
+   if(err != ACCEL_SUCCESS || (adev->irq_status & COMP_ERROR_IRQ)){
+       printk(KERN_INFO "Compute failed, device error code = %d\n", err);
+       sprintf(m->status, "Acceldev: Compute error %d", err);
+       retval = -EIO;
+   }
+
+   spin_lock(&aif->lock);
+   aif->status = ACI_STATUS_READY;
+   spin_unlock(&aif->lock);
+   return retval;
 }
 
 static struct acceldev_ops accelops = {

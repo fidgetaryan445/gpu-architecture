@@ -31,18 +31,12 @@ message protocol (`struct msg` with a command, flags and addresses), wrapped by 
 `user/usertest.c` allocates three 4096-int vectors, copies two in, runs the operation, copies the result back and checks it.
 
 ## Status of `accel_release/`
-Be upfront about this when presenting the project.
+Implemented in `accel-ops.c`: query, set-mode, best-fit alloc, free, DMA copy, compute, reset.
 
-Finished (in `accel-ops.c`, `accel-main.c`, `accel-api.c`):
-- PCI probe/remove, BAR mapping, legacy IRQ setup and the character-device plumbing.
-- Query, set-mode, allocation (`do_alloc`, `allocate_mem_range`), and the DMA copy path (`do_copy`, `do_accel_dma`).
+- **alloc**: best-fit over the free gaps (before the first range, between ranges, after the last).
+- **free**: the block must lie inside one allocated range; it removes the whole range, trims its head or tail, or splits it in two (the new node is allocated before taking the spinlock).
+- **reset**: frees every range of both regions, returns the device to DMA mode, clears the operand registers and sets the status to READY. It is called with `aif->lock` held (from `accel_release()`); the `OP_RESET` path in `accel-api.c` now takes the lock first.
+- **compute**: validates the three vectors, marks the device busy, drops the lock, writes the operand registers and `BAR0_CMD`, sleeps on the completion interrupt, then checks the error register.
+- Also fixed: `do_copy` could leave the device stuck in BUSY after an invalid address, and `allocate_mem_range` could overlap ranges.
 
-**Not finished** (`accel-ops.c`):
-- `do_free`, `do_reset` and `do_compute` are half-written drafts. They contain compile errors (for
-  example `long = cc->start`, `strcut`, `m->flag`, and undeclared variables). `do_compute` never
-  programs the destination, count or command registers, and `do_free` / `do_reset` still end in
-  `-ENOTSUPP`.
-- So the module does not build as it stands, and `usertest` can't succeed until `do_compute` is done.
-- The device-mapped (MMIO) copy path returns `-ENOTSUPP`.
-
-I haven't tested any of this against the emulated device.
+Verified: the module and user library **compile cleanly** against Linux 5.15 headers (gpu0). **Not run** against the emulated device, so treat it as untested. The device-mapped (MMIO) copy path is still `-ENOTSUPP`.

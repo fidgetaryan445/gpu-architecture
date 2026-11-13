@@ -9,4 +9,4 @@ Layout:
   user/          user library (accellib.c) and test (usertest.c)
 
 Build: make    (builds the module and the user code; needs kernel headers)
-Note: accel-ops.c still has unfinished do_free / do_reset / do_compute.
+Compiles against Linux 5.15; not yet run on the emulated device.
