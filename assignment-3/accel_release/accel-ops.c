@@ -357,8 +357,32 @@ static int do_copy(struct accel_interface *aif, struct msg *m)
 	 goto ret;
    }
    //Now it is a valid range
-   if(mode == AC_MODE_MMIO){ //mmio map
-          retval = -ENOTSUPP;
+   if(mode == AC_MODE_MMIO){ //mmio map: bounce through a kernel page, device address = BAR1 offset
+          long off = 0;
+          void *buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
+          if(!buf){
+               sprintf(m->status, "Acceldev: Out of kernel memory");
+               retval = -ENOMEM;
+               goto ret;
+          }
+          while(off < m->size){
+               long n = min_t(long, PAGE_SIZE, m->size - off);
+               void __iomem *dev = (void __iomem *)cc->kva + m->d_handle + off;
+               void __user *usr = (void __user *)(m->h_handle + off);
+               if(dir == ACCEL_COPY_TO_DEV){
+                    if(copy_from_user(buf, usr, n)) break;
+                    memcpy_toio(dev, buf, n);
+               }else{
+                    memcpy_fromio(buf, dev, n);
+                    if(copy_to_user(usr, buf, n)) break;
+               }
+               off += n;
+          }
+          kfree(buf);
+          if(off < m->size){
+               sprintf(m->status, "Acceldev: Error MMIO copy");
+               retval = -EFAULT;
+          }
           goto ret;
    }else{
 	   long opsize = m->size;

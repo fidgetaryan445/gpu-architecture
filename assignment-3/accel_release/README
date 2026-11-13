@@ -9,4 +9,4 @@ Layout:
   user/          user library (accellib.c) and test (usertest.c)
 
 Build: make    (builds the module and the user code; needs kernel headers)
-Compiles against Linux 5.15; not yet run on the emulated device.
+Compiles against Linux 5.15; not yet loaded against the emulated device.

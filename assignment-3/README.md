@@ -6,9 +6,9 @@ course's emulated PCI device under QEMU), so don't load them on a machine you ca
 
 | Folder | What it is | Origin | State |
 |---|---|---|---|
-| `chdev/` | Minimal character device (`/dev/democdev`) with `open/read/write/release` | Course example, studied | Working example |
-| `pio/` | Port-mapped I/O: writes strings to the 16550 serial port (0x3F8) with `inb/outb` | Course example, studied | Working example |
-| `mmio/` | Memory-mapped I/O: `ioremap`s the local APIC at 0xFEE00000 and exposes `apic_id` and `apic_version` in sysfs | Course example, studied | Working example |
+| `chdev/` | Minimal character device (`/dev/democdev`) with `open/read/write/release` | Course example, studied | Unmodified |
+| `pio/` | Port-mapped I/O: writes strings to the 16550 serial port (0x3F8) with `inb/outb` | Course example, studied | Unmodified |
+| `mmio/` | Memory-mapped I/O: `ioremap`s the local APIC at 0xFEE00000 and exposes `apic_id` and `apic_version` in sysfs | Course example, studied | Unmodified |
 | `accel_release/` | PCI driver for the `cs623accel` accelerator: memory allocation, DMA copies, vector compute | Assignment work | **Incomplete, see below** |
 
 ## The accelerator task
@@ -31,12 +31,14 @@ message protocol (`struct msg` with a command, flags and addresses), wrapped by 
 `user/usertest.c` allocates three 4096-int vectors, copies two in, runs the operation, copies the result back and checks it.
 
 ## Status of `accel_release/`
-Implemented in `accel-ops.c`: query, set-mode, best-fit alloc, free, DMA copy, compute, reset.
+Implemented in `accel-ops.c`: query, set-mode, best-fit alloc, free, DMA and MMIO copy, compute, reset.
 
 - **alloc**: best-fit over the free gaps (before the first range, between ranges, after the last).
 - **free**: the block must lie inside one allocated range; it removes the whole range, trims its head or tail, or splits it in two (the new node is allocated before taking the spinlock).
-- **reset**: frees every range of both regions, returns the device to DMA mode, clears the operand registers and sets the status to READY. It is called with `aif->lock` held (from `accel_release()`); the `OP_RESET` path in `accel-api.c` now takes the lock first.
+- **reset**: frees every range of both regions, returns the device to DMA mode, clears the operand registers and sets the status to READY. It runs with `aif->lock` held (from `accel_release()`); the `OP_RESET` path in `accel-api.c` takes the lock first.
+- **copy**: the DMA path moves data in chunks of up to 1 MB through a coherent buffer. The MMIO path bounces through one kernel page with `memcpy_toio` / `memcpy_fromio`; device addresses there are offsets into BAR1.
 - **compute**: validates the three vectors, marks the device busy, drops the lock, writes the operand registers and `BAR0_CMD`, sleeps on the completion interrupt, then checks the error register.
 - Also fixed: `do_copy` could leave the device stuck in BUSY after an invalid address, and `allocate_mem_range` could overlap ranges.
 
-Verified: the module and user library **compile cleanly** against Linux 5.15 headers (gpu0). **Not run** against the emulated device, so treat it as untested. The device-mapped (MMIO) copy path is still `-ENOTSUPP`.
+## Test environment
+`accel_release/` compiles without warnings against Linux 5.15 headers (IITK server `gpu0`, Ubuntu 22.04); that server is not publicly accessible. The module has **not** been loaded against the emulated `cs623accel` device, so the runtime behaviour is untested. `chdev/`, `pio/` and `mmio/` are course examples and were not modified.

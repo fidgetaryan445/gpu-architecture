@@ -31,7 +31,6 @@ The full text is in `ass1.txt`.
 ## Layout
 ```
 ass1.txt                  problem statement
-REMOTE_GPU_GUIDE.md       build / run / submit runbook for the GPU server
 nvbit_release/
   core/                   NVBit headers (libnvbit.a not included, see below)
   tools/control_div/      Part I
@@ -43,17 +42,18 @@ mem_div/                  standalone copy of the memory-divergence / cache-simul
 ```
 
 ## Build and run
-See `REMOTE_GPU_GUIDE.md` for the full steps. In short:
+Needs an NVIDIA GPU, CUDA (nvcc), and `libnvbit.a` from the NVBit 1.7 release. All tool Makefiles use `ARCH=all`, so they build for any supported architecture.
 ```bash
 cd nvbit_release/tools && make                       # builds every tool (needs nvcc and libnvbit.a)
 LD_PRELOAD=./control_div/control_div.so ./app1 file1.1
 MEM_TRACE_FILE=/tmp/mem_1.bin LD_PRELOAD=./mem_trace/mem_trace.so ./app2 file2.1
 gcc -O2 -o p3b p3b.c && ./p3b /tmp/mem_1.bin /tmp/mem_2.bin /tmp/mem_3.bin
 ```
+The PC trace for Part II is collected the same way with `tools/pc_trace` and read with `tools/p2.c`; `p3a.c` takes the same trace files as `p3b.c`.
 
 ## Not included
 - `app1`, `app2` and their inputs (course-provided), multi-GB traces, and `core/libnvbit.a`
   (download the NVBit 1.7 release and copy it into `nvbit_release/core/`).
 
-## Status
-The tools were built and run on the IITK GPU server. `REMOTE_GPU_GUIDE.md` was written before that first run and still says they were untested; trust this README over it.
+## Test environment
+Built and run on the IITK department GPU server `gpu0` (Ubuntu 22.04, CUDA 11.3, NVBit 1.7). The server is not publicly accessible, so you can't reproduce the runs without your own NVBit-capable GPU.

@@ -52,3 +52,6 @@ cd problem2 && ./problem2-v2.out          # reads disp.txt and grid.txt
 cd ../problem3 && ./problem3-blocked.out 1000000 $PWD/insert_100000.bin $PWD/search_100000.bin $PWD/delete_100000.bin
 ```
 Timings come from a shared GPU. See section 0 of `HOW_TO_RUN.md` before comparing numbers.
+
+## Test environment
+Built and measured on the IITK department GPU server `gpu3`: NVIDIA A40 (`sm_86`), CUDA 12.6. The server is shared and not publicly accessible, so timings depend on load (see `HOW_TO_RUN.md`) and you'll need your own CUDA GPU (adjust `-arch` in the Makefile) to rerun them.

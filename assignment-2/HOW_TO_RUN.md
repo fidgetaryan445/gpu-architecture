@@ -1,6 +1,6 @@
 # How to run everything by hand and check the report (roll no. 230217)
 
-Everything below is for the GPU3 server (`ssh aryanmg23@gpu3.cse.iitk.ac.in`): NVIDIA A40, compute capability 8.6 (the Makefile's `-arch=sm_86` is right), CUDA 12.6.
+Everything below was run on the IITK GPU3 server (not publicly accessible): NVIDIA A40, compute capability 8.6 (the Makefile's `-arch=sm_86` is right), CUDA 12.6.
 The report's numbers come from the submitted code, run on GPU3 on 2026-10-27; this file tells you how to reproduce each of them and what you should see.
 
 ## 0. Read this first: the GPU is shared, so timings move
@@ -14,13 +14,9 @@ So for timing numbers:
 
 Correctness results (point counts, counters, false-positive rates) are deterministic and do not depend on load.
 
-## 1. Get the files onto the server and build
+## 1. Build
 
 ```bash
-# on your laptop
-scp 230217-assign2.tar.gz aryanmg23@gpu3.cse.iitk.ac.in:~/
-# on GPU3
-ssh aryanmg23@gpu3.cse.iitk.ac.in
 export PATH=/usr/local/cuda/bin:$PATH        # nvcc is not on the default PATH
 tar xzf 230217-assign2.tar.gz
 cd 230217-assign2
