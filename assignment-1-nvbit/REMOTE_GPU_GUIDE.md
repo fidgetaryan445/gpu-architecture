@@ -8,7 +8,7 @@ for that session.
 ## 0. What's already done here
 
 ```
-CS623_assignment1/
+assignment-1-nvbit/
 ├── app1, app2                      # given binaries
 ├── file1.1/.2/.3, file2.1/.2/.3     # given inputs
 ├── ass1.txt                        # assignment text
@@ -31,7 +31,7 @@ All `ARCH?=all` lines in every `tools/*/Makefile` were already changed to
 smoke-tested locally with synthetic data and are correct C — nothing to fix
 there, just copy them over.
 
-Copy the whole `CS623_assignment1/` directory to gpu0 or gpu3 (`scp -r` or
+Copy the whole `assignment-1-nvbit/` directory to gpu0 or gpu3 (`scp -r` or
 `rsync`), or just re-clone the NVBit tarball there and copy these specific
 files over the top: `tools/control_div/`, `tools/pc_trace/`, the 3 modified
 files in `tools/mem_trace/`, and `tools/p2.c`, `tools/p3a.c`, `tools/p3b.c`.
@@ -91,7 +91,7 @@ cd /path/to/CS623_assignment1
 
 ```bash
 cd nvbit_release
-LD_PRELOAD=./tools/control_div/control_div.so ../CS623_assignment1/app1 ../CS623_assignment1/file1.1
+LD_PRELOAD=./tools/control_div/control_div.so ../assignment-1-nvbit/app1 ../CS623_assignment1/file1.1
 ```
 
 (Adjust relative paths to wherever `app1`/`fileX.Y` actually live once

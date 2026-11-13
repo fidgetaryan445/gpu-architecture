@@ -214,11 +214,11 @@ Correctness anchors: 6-value grid 2071 points, 8-value grid 9316, full grid 1160
 | L2 hit rate | 9.7 % | 10.4 % | 36.5 % | 19.9 % |
 | long-scoreboard stalls | 22.6 % | 50.9 % | 22.2 % | 57.5 % |
 
-Raw outputs behind these tables are in `final-data/` (final run), `timing-data/` (all timing runs pooled) and `profile-data/` (first profiling run), next to the submission folder and not inside the tar.
+Raw outputs behind these tables are in `final-data/` (final run), and `timing-data/` (all timing runs pooled), next to the submission folder and not inside the tar.
 
 ## 6. Rebuilding the report PDF
 
-The LaTeX source is not in the tar; it is in `report-source/230217-assign2.tex` (next to the submission folder). Build with `tectonic 230217-assign2.tex` (any LaTeX works; it needs `booktabs`, `enumitem`, `fancyvrb` and `needspace`).
+The LaTeX source is not in the tar; it is `230217-assign2/230217-assign2.tex`. Build with `tectonic 230217-assign2.tex` (any LaTeX works; it needs `booktabs`, `enumitem`, `fancyvrb` and `needspace`).
 The report in the tar is the compact 3-page version; the earlier, longer 7-page version is kept in `report-long/` (also not in the tar).
 
 ## 7. Assumptions and limits (also stated in the report)
