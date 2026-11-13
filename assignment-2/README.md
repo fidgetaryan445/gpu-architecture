@@ -37,21 +37,34 @@ has no 8-bit atomics), k = 3 hash functions.
 ## Layout
 ```
 assignment2.pdf         problem statement
-HOW_TO_RUN.md           reproduction steps and expected output for every number in the report
-230217-assign2/         the submission (Makefile, problem1/, problem2/, problem3/, report .tex/.pdf)
-source-files/           course-provided starter files (template Makefile, problem1.cu, problem2-v0.c, inputs)
-final-data/             raw outputs of the final measurement run (timing, profiler, correctness)
-timing-data/            all timing runs pooled
+230217-assign2/         the solution: Makefile, problem1/, problem2/, problem3/, report (.tex and .pdf)
+source-files/           course-provided starter files (template Makefile, problem1.cu, problem2-v0.c CPU reference, inputs)
 ```
+The report (`230217-assign2/230217-assign2.pdf`) has the full tables and discussion.
 
 ## Build and run
+Needs `nvcc` (CUDA 12.x). Set `-arch` in the Makefile for your GPU (`sm_86` for an A40).
 ```bash
-cd 230217-assign2 && make                 # builds all three problems
-./problem1/problem1.out
-cd problem2 && ./problem2-v2.out          # reads disp.txt and grid.txt
-cd ../problem3 && ./problem3-blocked.out 1000000 $PWD/insert_100000.bin $PWD/search_100000.bin $PWD/delete_100000.bin
+cd 230217-assign2 && make        # or: make problem1 | problem2 | problem3
 ```
-Timings come from a shared GPU. See section 0 of `HOW_TO_RUN.md` before comparing numbers.
+
+**Problem 1**: `./problem1/problem1.out`. The size is `Input_Width = (1 << 8)` in `230217-prob1.cu`; change the exponent to 6, 7 or 8 for N = 64, 128, 256. Both kernels must print `No differences found`.
+
+**Problem 2**: run from `problem2/` (reads `disp.txt` and `grid.txt` from the current directory).
+```bash
+cd problem2 && ./problem2-v1.out   # also -v2.out, -v3.out; writes results-vN.txt
+```
+Each prints `result pnts: 11608` and a `Total time`; the three `results-v*.txt` files must be identical. To compare with the CPU reference (about 11 minutes):
+`gcc -O2 -std=c17 -D_POSIX_C_SOURCE=199309L ../../source-files/problem2-v0.c -o v0.out -lm && ./v0.out`.
+
+**Problem 3**: pass the filter size and absolute paths to the three traces.
+```bash
+cd problem3
+./problem3-vanilla.out 1000000 $PWD/insert_100000.bin $PWD/search_100000.bin $PWD/delete_100000.bin   # or problem3-blocked.out
+```
+Expect 0 counters differing from the host model and 0 false negatives. False-positive rates after insert / delete for N = 10^6: vanilla 0.547% / 0.389%, blocked 0.662% / 0.554%.
+`make traces` builds `trace_generator.out n [dup_pct] [ghost_pct] [seed]` for larger traces. Profile a kernel with, for example,
+`ncu --set full -k insert_kernel -c 1 ./problem3-vanilla.out <args>`.
 
 ## Test environment
-Built and measured on the IITK department GPU server `gpu3`: NVIDIA A40 (`sm_86`), CUDA 12.6. The server is shared and not publicly accessible, so timings depend on load (see `HOW_TO_RUN.md`) and you'll need your own CUDA GPU (adjust `-arch` in the Makefile) to rerun them.
+Built and measured on the IITK department GPU server `gpu3`: NVIDIA A40 (`sm_86`), CUDA 12.6. The server is shared and not publicly accessible, so absolute timings depend on its load; correctness results (point counts, counters, false-positive rates) are deterministic.

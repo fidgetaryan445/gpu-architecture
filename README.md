@@ -27,7 +27,7 @@ Approach and results: shared-memory tiling, constant-memory filter and unrolling
 faster kernel); reused row sums with early exit (108x faster than the CPU reference, 5.8x faster
 than the simple port), plus a Thrust version; blocked Bloom filter (1.7x to 1.9x faster, about
 37% less DRAM traffic, more false positives).
-Everything is reproducible from `HOW_TO_RUN.md`.
+Build and run instructions are in `assignment-2/README.md`.
 
 ### Assignment 3: Drivers (`assignment-3/`)
 - `chdev/`, `pio/`, `mmio/`: course example modules, unmodified (character device, port I/O to the serial port, MMIO to the local APIC with sysfs).
