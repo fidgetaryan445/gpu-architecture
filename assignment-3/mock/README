@@ -1,3 +1,0 @@
---- The `user' directory contains the user code (lib and usertest) ---
-
-A single `make' build both the module and user code

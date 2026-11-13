@@ -219,7 +219,6 @@ Raw outputs behind these tables are in `final-data/` (final run), and `timing-da
 ## 6. Rebuilding the report PDF
 
 The LaTeX source is not in the tar; it is `230217-assign2/230217-assign2.tex`. Build with `tectonic 230217-assign2.tex` (any LaTeX works; it needs `booktabs`, `enumitem`, `fancyvrb` and `needspace`).
-The report in the tar is the compact 3-page version; the earlier, longer 7-page version is kept in `report-long/` (also not in the tar).
 
 ## 7. Assumptions and limits (also stated in the report)
 

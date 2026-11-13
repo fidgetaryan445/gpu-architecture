@@ -19,13 +19,12 @@ assignment-3/         Linux kernel modules for char, PIO/MMIO and accelerator de
 ### Assignment 2: CUDA (`assignment-2/`)
 - `230217-assign2/`: final submission. `problem1` (3D kernel, basic vs. optimized), `problem2` (three kernel versions), `problem3` (GPU hash-style structure, vanilla vs. blocked), plus `Makefile` and report.
 - `HOW_TO_RUN.md`: build and reproduction steps. `assignment2.pdf` is the problem statement.
-- `final-data/`, `timing-data/`: raw measurements behind the report. `report-long/`: longer report variant. `source-files/`: working sources.
+- `final-data/`, `timing-data/`: raw measurements behind the report. `source-files/`: working sources.
 
 ### Assignment 3: Drivers (`assignment-3/`)
 - `chdev/`: simple character device and test program.
 - `pio/`, `mmio/`: port-I/O and memory-mapped I/O examples.
 - `accel_release/`: accelerator device module with user library and test (`user/`).
-- `mock/`: mock version of the accelerator exercise.
 - Build each directory with `make` (needs kernel headers).
 
 ## Notes
