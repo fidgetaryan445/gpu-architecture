@@ -1,0 +1,5 @@
+after insert: 0 counters differ from the host model
+search after insert: 99999 searches, 75082 present, 0 false negatives, 8416 false positives, false positive rate 0.084161
+after delete: 0 counters differ from the host model
+deleted keys that were never inserted but looked present: 0
+search after delete: 99999 searches, 41064 present, 0 false negatives, 7731 false positives, false positive rate 0.077311

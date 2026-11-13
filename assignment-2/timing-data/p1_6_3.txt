@@ -1,0 +1,7 @@
+Serial version: 60 ms
+No differences found between base and test versions
+Kernel3D_basic time (ms): 0.04864
+Kernel3D_basic end-to-end time (ms): 1.4018
+No differences found between base and test versions
+Kernel3D_opt time (ms): 0.0315328
+Kernel3D_opt end-to-end time (ms): 1.4051

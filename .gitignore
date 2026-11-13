@@ -1,0 +1,10 @@
+*.o
+*.so
+*.a
+*.tar
+*.tar.gz
+*.tar.xz
+*.zip
+*Zone.Identifier
+pc_trace*.txt*
+*.trace

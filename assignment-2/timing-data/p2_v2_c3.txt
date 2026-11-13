@@ -1,0 +1,2 @@
+result pnts: 11608
+Total time = 10.525286

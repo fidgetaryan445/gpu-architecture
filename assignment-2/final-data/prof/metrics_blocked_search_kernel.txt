@@ -1,0 +1,33 @@
+==PROF== Connected to process 1070287 (/users/misc/aryanmg23/cs623-assign2-test/final2/230217-assign2/problem3/problem3-blocked.out)
+==PROF== Profiling "search_kernel": 0%....50%....100% - 4 passes
+after insert: 0 counters differ from the host model
+search after insert: 2000000 searches, 1346631 present, 0 false negatives, 13297 false positives, false positive rate 0.006648
+after delete: 0 counters differ from the host model
+deleted keys that were never inserted but looked present: 0
+search after delete: 2000000 searches, 676671 present, 0 false negatives, 10004 false positives, false positive rate 0.005002
+==PROF== Disconnected from process 1070287
+[1070287] problem3-blocked.out@127.0.0.1
+  search_kernel(const unsigned int *, const unsigned int *, int, unsigned int, unsigned char *) (7813, 1, 1)x(256, 1, 1), Context 1, Stream 7, Device 0, CC 8.6
+    Section: Command line profiler metrics
+    ------------------------------------------------------------------------ ----------- ------------
+    Metric Name                                                              Metric Unit Metric Value
+    ------------------------------------------------------------------------ ----------- ------------
+    dram__bytes.sum                                                                Mbyte       220.41
+    dram__throughput.avg.pct_of_peak_sustained_elapsed                                 %        85.47
+    gpu__time_duration.sum                                                            us       370.85
+    lts__t_sector_hit_rate.pct                                                         %        19.88
+    sm__warps_active.avg.pct_of_peak_sustained_active                                  %        81.77
+    smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio        inst       197.62
+    smsp__inst_executed.sum                                                         inst    61,25,024
+    smsp__sass_thread_inst_executed.sum                                             inst 19,60,00,768
+    smsp__sass_thread_inst_executed_op_dadd_pred_on.sum                             inst            0
+    smsp__sass_thread_inst_executed_op_dfma_pred_on.sum                             inst            0
+    smsp__sass_thread_inst_executed_op_dmul_pred_on.sum                             inst            0
+    smsp__sass_thread_inst_executed_op_fadd_pred_on.sum                             inst            0
+    smsp__sass_thread_inst_executed_op_ffma_pred_on.sum                             inst            0
+    smsp__sass_thread_inst_executed_op_fmul_pred_on.sum                             inst            0
+    smsp__sass_thread_inst_executed_op_integer_pred_on.sum                          inst 15,67,91,689
+    smsp__thread_inst_executed_per_inst_executed.ratio                                             32
+    smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct                       %        57.48
+    ------------------------------------------------------------------------ ----------- ------------
+
