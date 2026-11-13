@@ -56,4 +56,4 @@ The PC trace for Part II is collected the same way with `tools/pc_trace` and rea
   (download the NVBit 1.7 release and copy it into `nvbit_release/core/`).
 
 ## Test environment
-Built and run on the IITK department GPU server `gpu0` (Pascal GPU, Ubuntu 22.04, CUDA 11.3, NVBit 1.7). The server is not publicly accessible, so you can't reproduce the runs without your own NVBit-capable GPU.
+Built and run on the IITK department GPU server `gpu0` (2x GeForce GTX 1080, Pascal; Ubuntu 22.04, CUDA 11.3, NVBit 1.7). The server is not publicly accessible, so you can't reproduce the runs without your own NVBit-capable GPU.
