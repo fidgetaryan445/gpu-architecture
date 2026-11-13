@@ -1,3 +1,12 @@
---- The `user' directory contains the user code (lib and usertest) ---
+cs623accel PCI accelerator driver (see ../README.md for the design and current status).
 
-A single `make' build both the module and user code
+Layout:
+  accel-main.c   PCI probe/remove, BAR mapping, IRQ handlers, module init
+  accel-api.c    character device (/dev/cs623accel): open/read/write; a written struct msg is dispatched to the ops table
+  accel-ops.c    device operations: query, set mode, alloc, free, copy (DMA), compute, reset
+  acceldev.h     register map and driver structures
+  interface.h    kernel/user message format (struct msg)
+  user/          user library (accellib.c) and test (usertest.c)
+
+Build: make    (builds the module and the user code; needs kernel headers)
+Note: accel-ops.c still has unfinished do_free / do_reset / do_compute.

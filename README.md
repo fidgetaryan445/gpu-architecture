@@ -11,22 +11,33 @@ assignment-3/         Linux kernel modules for char, PIO/MMIO and accelerator de
 ```
 
 ### Assignment 1: NVBit (`assignment-1-nvbit/`)
-- `nvbit_release/`: NVBit 1.7 SDK and the instrumentation tools (`pc_trace`, `mem_trace`, `control_div`, ...).
-- `mem_div/`: memory-divergence tool and cache simulator (`mem_trace.cu`, `inject_funcs.cu`, `divergence.cpp`, `cache_sim.cpp`).
-- `ass1.txt` is the problem statement; `REMOTE_GPU_GUIDE.md` is the build and run guide for the GPU server.
-- Not included: the `app1`/`app2` binaries, input files and multi-GB traces, and `libnvbit.a`. Get the library from the NVBit release.
+Problem: write NVBit tools that instrument two prebuilt CUDA binaries at run time to measure
+(I) thread hierarchy and warp divergence, (II) unique instructions and 32-byte instruction-cache
+blocks from a PC trace, (III-A) memory divergence per memory reference, and (III-B) L1 hit/miss
+counts from a tag-only LRU cache simulator for 1 to 64 SMs.
+Approach: custom tools derived from NVBit's `instr_count` and `mem_trace` (injected device
+functions record active masks, PCs and addresses), plus plain-C trace post-processors.
+Binaries, inputs, traces and `libnvbit.a` are not in the repo. The tools were written without GPU
+access; see the folder README.
 
 ### Assignment 2: CUDA (`assignment-2/`)
-- `230217-assign2/`: final submission. `problem1` (3D kernel, basic vs. optimized), `problem2` (three kernel versions), `problem3` (GPU hash-style structure, vanilla vs. blocked), plus `Makefile` and report.
-- `HOW_TO_RUN.md`: build and reproduction steps. `assignment2.pdf` is the problem statement.
-- `final-data/`, `timing-data/`: raw measurements behind the report. `source-files/`: working sources.
+Problem: (1) 3D convolution, basic vs. optimized kernel; (2) parallelize a 13^10-point grid search
+in three ways; (3) a GPU counting Bloom filter, vanilla vs. cache-blocked, with host-side
+verification and Nsight Compute profiling.
+Approach and results: shared-memory tiling, constant-memory filter and unrolling (1.8x to 2.1x
+faster kernel); reused row sums with early exit (108x faster than the CPU reference, 5.8x faster
+than the simple port), plus a Thrust version; blocked Bloom filter (1.7x to 1.9x faster, about
+37% less DRAM traffic, more false positives).
+Everything is reproducible from `HOW_TO_RUN.md`. This is the most finished part of the repo.
 
 ### Assignment 3: Drivers (`assignment-3/`)
-- `chdev/`: simple character device and test program.
-- `pio/`, `mmio/`: port-I/O and memory-mapped I/O examples.
-- `accel_release/`: accelerator device module with user library and test (`user/`).
-- Build each directory with `make` (needs kernel headers).
+- `chdev/`, `pio/`, `mmio/`: working course example modules (character device, port I/O to the serial port, MMIO to the local APIC with sysfs).
+- `accel_release/`: PCI driver for a `cs623accel` accelerator device (allocation, DMA copies, vector add/mul/xor).
+  **Incomplete:** the allocation and DMA-copy paths are written, but `do_free`, `do_reset` and
+  `do_compute` are unfinished drafts that don't compile, so the module doesn't build yet.
+  Details in `assignment-3/README.md`.
 
 ## Notes
 - Needs CUDA 12.x and an NVIDIA GPU (developed for an A40, `sm_86`) for assignments 1 and 2.
 - Generated data (traces, tarballs, binaries, `.o`/`.a`) is excluded by `.gitignore`.
+- Each assignment folder has its own README with the problem statement, approach and run instructions.
